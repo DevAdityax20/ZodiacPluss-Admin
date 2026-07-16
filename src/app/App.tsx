@@ -234,39 +234,39 @@ const ProgBar = ({ pct, color }: { pct: number; color: string }) => (
 // Main section (top, above first divider)
 const NAV_MAIN = [
   { id: "dashboard", label: "Dashboard" },
-  { id: "clients",   label: "Client Users" },
-  { id: "experts",   label: "Expert Users" },
-  { id: "support",   label: "Inbox",        badge: 23 },
-  { id: "finance",   label: "Transactions" },
+  { id: "clients", label: "Client Users" },
+  { id: "experts", label: "Expert Users" },
+  { id: "support", label: "Inbox", badge: 23 },
+  { id: "finance", label: "Transactions" },
 ];
 
 // Pages section (below PAGES label)
 const NAV_PAGES = [
-  { id: "pricing",    label: "Pricing" },
-  { id: "eap",        label: "EAP / Calendar" },
-  { id: "analytics",  label: "Analytics" },
+  { id: "pricing", label: "Pricing" },
+  { id: "eap", label: "EAP / Calendar" },
+  { id: "analytics", label: "Analytics" },
   { id: "operations", label: "Operations" },
-  { id: "adminteam",  label: "Admin Team" },
-  { id: "reports",    label: "Reports" },
-  { id: "ui",         label: "UI Elements" },
-  { id: "table",      label: "Data Table" },
+  { id: "adminteam", label: "Admin Team" },
+  { id: "reports", label: "Reports" },
+  { id: "ui", label: "UI Elements" },
+  { id: "table", label: "Data Table" },
 ];
 
 const PAGE_CRUMBS: Record<string, string[]> = {
-  dashboard:  ["Dashboard"],
-  clients:    ["Client Users"],
-  experts:    ["Expert Users"],
-  support:    ["Inbox / Support"],
-  finance:    ["Finance", "Transactions"],
-  pricing:    ["Pages", "Pricing"],
-  eap:        ["Pages", "EAP / Calendar"],
-  analytics:  ["Pages", "Analytics"],
+  dashboard: ["Dashboard"],
+  clients: ["Client Users"],
+  experts: ["Expert Users"],
+  support: ["Inbox / Support"],
+  finance: ["Finance", "Transactions"],
+  pricing: ["Pages", "Pricing"],
+  eap: ["Pages", "EAP / Calendar"],
+  analytics: ["Pages", "Analytics"],
   operations: ["Pages", "Operations"],
-  adminteam:  ["Pages", "Admin Team"],
-  reports:    ["Pages", "Reports"],
-  ui:         ["Pages", "UI Elements"],
-  table:      ["Pages", "Data Table"],
-  settings:   ["Settings"],
+  adminteam: ["Pages", "Admin Team"],
+  reports: ["Pages", "Reports"],
+  ui: ["Pages", "UI Elements"],
+  table: ["Pages", "Data Table"],
+  settings: ["Settings"],
 };
 
 // ─── Notification panel ───────────────────────────────────────────────────────
@@ -998,14 +998,14 @@ const CALENDAR_EVENTS = [
 //  EAP / CALENDAR PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 function EAPPage() {
-  const [calView, setCalView] = useState<"Day"|"Week"|"Month">("Month");
+  const [calView, setCalView] = useState<"Day" | "Week" | "Month">("Month");
   const [calMonth] = useState({ name: "October", year: 2026 });
-  const [hoveredEvent, setHoveredEvent] = useState<number|null>(null);
+  const [hoveredEvent, setHoveredEvent] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   // October 2026 calendar grid: starts on Thursday (day 4, 0-indexed from Mon)
   // We show 6 rows × 7 cols
-  const DAYS_OF_WEEK = ["MON","TUE","WED","THU","FRI","SAT","SUN"];
+  const DAYS_OF_WEEK = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
   // Build 6×7 grid for October 2026
   // Oct 1 = Thursday → index 3 (Mon=0)
@@ -1082,7 +1082,7 @@ function EAPPage() {
                     {/* Attendee avatars */}
                     <div className="flex items-center gap-1 mt-1.5">
                       <div className="flex -space-x-1.5">
-                        {[0,1,2].map(j => (
+                        {[0, 1, 2].map(j => (
                           <div key={j} className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[7px] font-bold text-white"
                             style={{ background: avatarGrad(i + j) }}>
                             {String.fromCharCode(65 + j)}
@@ -1130,7 +1130,7 @@ function EAPPage() {
               </div>
               {/* View toggle */}
               <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${P.border}` }}>
-                {(["Day","Week","Month"] as const).map(v => (
+                {(["Day", "Week", "Month"] as const).map(v => (
                   <button key={v} onClick={() => setCalView(v)}
                     className="px-4 py-1.5 text-[12px] font-semibold transition-all"
                     style={{
@@ -1204,7 +1204,7 @@ function EAPPage() {
                               <p className="text-[11px]" style={{ color: P.slateLight }}>{singleEv.address}</p>
                               <div className="flex items-center gap-1 mt-2.5">
                                 <div className="flex -space-x-1.5">
-                                  {[0,1,2].map(j => (
+                                  {[0, 1, 2].map(j => (
                                     <div key={j} className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white"
                                       style={{ background: avatarGrad(j) }}>
                                       {String.fromCharCode(65 + j)}
@@ -1254,7 +1254,7 @@ function EAPPage() {
               </button>
             </div>
             <div className="space-y-3">
-              {[["Event Title","e.g. Design Conference"],["Organiser","e.g. Zillul Agency"],["Date & Time","e.g. Oct 3 at 07:19 AM"],["Location","e.g. New York"]].map(([lbl,ph]) => (
+              {[["Event Title", "e.g. Design Conference"], ["Organiser", "e.g. Zillul Agency"], ["Date & Time", "e.g. Oct 3 at 07:19 AM"], ["Location", "e.g. New York"]].map(([lbl, ph]) => (
                 <div key={lbl}>
                   <label className="text-[11.5px] font-semibold text-[#0C1B33] mb-1 block">{lbl}</label>
                   <input placeholder={ph} className="w-full px-3 py-2.5 rounded-xl text-[12.5px] focus:outline-none transition-all"
@@ -1886,20 +1886,20 @@ const ComingSoon = ({ title }: { title: string }) => (
 );
 
 const PAGES: Record<string, React.ReactNode> = {
-  dashboard:  <DashboardPage />,
-  clients:    <ClientsPage />,
-  experts:    <ExpertsPage />,
-  eap:        <EAPPage />,
-  finance:    <FinancePage />,
-  analytics:  <AnalyticsPage />,
+  dashboard: <DashboardPage />,
+  clients: <ClientsPage />,
+  experts: <ExpertsPage />,
+  eap: <EAPPage />,
+  finance: <FinancePage />,
+  analytics: <AnalyticsPage />,
   operations: <OperationsPage />,
-  adminteam:  <AdminTeamPage />,
-  support:    <SupportPage />,
-  settings:   <SettingsPage />,
-  pricing:    <ComingSoon title="Pricing" />,
-  reports:    <ComingSoon title="Reports" />,
-  ui:         <ComingSoon title="UI Elements" />,
-  table:      <ComingSoon title="Data Table" />,
+  adminteam: <AdminTeamPage />,
+  support: <SupportPage />,
+  settings: <SettingsPage />,
+  pricing: <ComingSoon title="Pricing" />,
+  reports: <ComingSoon title="Reports" />,
+  ui: <ComingSoon title="UI Elements" />,
+  table: <ComingSoon title="Data Table" />,
 };
 
 export default function App() {
