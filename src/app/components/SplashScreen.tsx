@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import zodiacLogo from "@/imports/Zodiac_Colored_Logo_croped-removebg-preview.png";
 
 // ─── Zodiac SVG symbols (inline for zero-dependency) ─────────────────────────
 const ZODIAC_SYMBOLS: { name: string; path: string; viewBox: string }[] = [
@@ -84,7 +85,7 @@ function ZodiacBgSymbol({ symbol, x, y, size, opacity, delay, drift }: {
         filter: "blur(0.3px)",
       }}
       fill="none"
-      stroke="rgba(8, 145, 178, 0.35)"
+      stroke="rgba(148, 163, 184, 0.22)"
       strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -251,6 +252,14 @@ export default function SplashScreen({ onComplete, minDuration = 3500 }: SplashS
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.3); }
         }
+        @keyframes logoPulse {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 12px rgba(8,145,178,0.1)); }
+          50% { transform: scale(1.06); filter: drop-shadow(0 8px 24px rgba(8,145,178,0.25)); }
+        }
+        @keyframes outerWheelSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       <div
@@ -295,7 +304,7 @@ export default function SplashScreen({ onComplete, minDuration = 3500 }: SplashS
                   y1={`${c.y + c.stars[a].y * c.scale * 0.08}%`}
                   x2={`${c.x + c.stars[b].x * c.scale * 0.08}%`}
                   y2={`${c.y + c.stars[b].y * c.scale * 0.08}%`}
-                  stroke="rgba(8,145,178,0.12)"
+                  stroke="rgba(148, 163, 184, 0.15)"
                   strokeWidth="0.5"
                   strokeDasharray="3,3"
                   style={{ animation: `zodiacFadeIn 2s ease-out ${i * 0.2 + li * 0.1}s both` }}
@@ -332,198 +341,70 @@ export default function SplashScreen({ onComplete, minDuration = 3500 }: SplashS
         />
 
         {/* Center content */}
-        <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* Orbiting ring decorations */}
-          <div style={{ position: "relative", width: 140, height: 140, marginBottom: 28 }}>
-            {/* Outer pulse ring 2 */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: 200,
-                height: 200,
-                borderRadius: "50%",
-                border: "1px solid rgba(8,145,178,0.08)",
-                animation: "ringPulse2 4s ease-in-out infinite",
-              }}
-            />
-            {/* Outer pulse ring */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: 170,
-                height: 170,
-                borderRadius: "50%",
-                border: "1.5px solid rgba(8,145,178,0.12)",
-                animation: "ringPulse 3s ease-in-out infinite",
-              }}
-            />
-            {/* Orbiting dots ring */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: 160,
-                height: 160,
-                animation: "orbitSpin 12s linear infinite",
-              }}
-            >
-              {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    width: 5 + (i % 2) * 2,
-                    height: 5 + (i % 2) * 2,
-                    borderRadius: "50%",
-                    background: `rgba(8,145,178,${0.3 + (i % 3) * 0.15})`,
-                    left: `${50 + 50 * Math.cos((deg * Math.PI) / 180)}%`,
-                    top: `${50 + 50 * Math.sin((deg * Math.PI) / 180)}%`,
-                    transform: "translate(-50%, -50%)",
-                    boxShadow: `0 0 6px rgba(8,145,178,${0.3 + (i % 3) * 0.1})`,
-                  }}
-                />
-              ))}
-            </div>
-            {/* Reverse orbit */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: 190,
-                height: 190,
-                animation: "orbitSpin 18s linear infinite reverse",
-              }}
-            >
-              {[30, 150, 270].map((deg, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    width: 3,
-                    height: 3,
-                    borderRadius: "50%",
-                    background: "rgba(16, 185, 129, 0.4)",
-                    left: `${50 + 50 * Math.cos((deg * Math.PI) / 180)}%`,
-                    top: `${50 + 50 * Math.sin((deg * Math.PI) / 180)}%`,
-                    transform: "translate(-50%, -50%)",
-                    boxShadow: "0 0 8px rgba(16, 185, 129, 0.3)",
-                  }}
-                />
-              ))}
+        <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 640 }}>
+          {/* Horizontal Brand Panel (Logo Wheel + Text side-by-side) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 24, animation: "logoReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+            {/* Spinning/Static Masked Zodiac Logo Container */}
+            <div style={{ position: "relative", width: 112, height: 112, flexShrink: 0 }}>
+              {/* Outer Rotating Constellation Wheel (Masked) */}
+              <img
+                src={zodiacLogo}
+                alt="Zodiac Outer Wheel"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  WebkitMaskImage: "radial-gradient(circle, transparent 52%, black 53%)",
+                  maskImage: "radial-gradient(circle, transparent 52%, black 53%)",
+                  animation: "outerWheelSpin 28s linear infinite",
+                }}
+              />
+              {/* Inner Static Face & Lotus (Clipped) */}
+              <img
+                src={zodiacLogo}
+                alt="Zodiac Inner Face"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  clipPath: "circle(53% at 50% 50%)",
+                }}
+              />
             </div>
 
-            {/* Logo circle container */}
-            <div
-              style={{
-                width: 140,
-                height: 140,
-                borderRadius: "50%",
-                background: "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(240,249,255,0.9))",
-                boxShadow: "0 8px 40px rgba(8,145,178,0.15), 0 2px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                animation: "logoReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-                position: "relative",
-                zIndex: 5,
-              }}
-            >
-              {/* Inner SVG logo – simplified ZodiacPluss face/heart mark */}
-              <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-                {/* Outer circle */}
-                <circle cx="36" cy="36" r="32" stroke="#0C5E5A" strokeWidth="2.5" fill="rgba(209,237,233,0.25)" />
-                {/* Head profile */}
-                <path
-                  d="M42 18c6 3 10 10 10 18s-4 14-10 17"
-                  stroke="#0C5E5A"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Face inner curve */}
-                <path
-                  d="M38 22c4 2 7 7 7 13s-3 10-7 13"
-                  stroke="#0C5E5A"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Heart shape */}
-                <path
-                  d="M32 30c-2-3-6-3-7 0s1 6 7 10c6-4 8-7 7-10s-5-3-7 0z"
-                  fill="#0C5E5A"
-                  opacity="0.85"
-                />
-                {/* Vine/stem */}
-                <path
-                  d="M24 26c-1 4-1 8 0 12s2 6 3 8"
-                  stroke="#0C5E5A"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                <path
-                  d="M22 24c0 3 1 5 2 7"
-                  stroke="#0C5E5A"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Lotus flower */}
-                <ellipse cx="23" cy="20" rx="3.5" ry="2.5" fill="#E8918C" opacity="0.85" />
-                <ellipse cx="21" cy="21" rx="2" ry="3" fill="#EBA5A0" opacity="0.7" transform="rotate(-20 21 21)" />
-                <ellipse cx="25" cy="21" rx="2" ry="3" fill="#EBA5A0" opacity="0.7" transform="rotate(20 25 21)" />
-                <ellipse cx="23" cy="19" rx="2" ry="1.5" fill="#F0B8B4" opacity="0.6" />
-              </svg>
+            {/* Text logo & slogan */}
+            <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+              <div style={{ display: "flex", alignItems: "center", fontSize: 44, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.05, fontFamily: "'Inter', sans-serif" }}>
+                <span style={{ color: "#0891B2" }}>Zodiac</span>
+                <span style={{ color: "#0C1B33", position: "relative" }}>
+                  Pluss
+                  {/* Lotus emblem on top right of Pluss */}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0891B2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", top: -2, right: -16 }}>
+                    <path d="M12 21c-1.5-1.5-2.5-3.2-3-5 .6-.2 1.2-.2 1.8 0 .6.2 1 .6 1.2 1.2.2-.6.6-1 1.2-1.2.6-.2 1.2-.2 1.8 0-.5 1.8-1.5 3.5-3 5zm-3.5-6.5c-1-1.5-1.5-3.2-1.5-5 1.5.5 2.5 1.5 3 3 .5-1.5 1.5-2.5 3-3 0 1.8-.5 3.5-1.5 5h-3zm7 0c-1-1.5-1.5-3.2-1.5-5 1.5.5 2.5 1.5 3 3 .5-1.5 1.5-2.5 3-3 0 1.8-.5 3.5-1.5 5h-3z" />
+                  </svg>
+                </span>
+              </div>
+              <p style={{ fontSize: 13.5, color: "#64748B", margin: "6px 0 0", fontWeight: 500, letterSpacing: 0.5 }}>
+                Your Personal Wellness Companion
+              </p>
             </div>
           </div>
-
-          {/* Brand text */}
-          <div style={{ textAlign: "center", animation: "textReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both" }}>
-            <h1
-              style={{
-                fontSize: 36,
-                fontWeight: 700,
-                margin: 0,
-                background: "linear-gradient(135deg, #0C1B33 0%, #0891B2 50%, #0E7490 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                letterSpacing: 3,
-              }}
-            >
-              ZodiacPluss
-            </h1>
-          </div>
-          <p
-            style={{
-              fontSize: 13,
-              color: "#64748B",
-              margin: "6px 0 0",
-              fontWeight: 500,
-              letterSpacing: 5,
-              textTransform: "uppercase",
-              animation: "subtitleReveal 0.8s ease-out 0.9s both",
-            }}
-          >
-            Admin Console
-          </p>
 
           {/* Progress bar */}
           <div
             style={{
-              marginTop: 40,
-              width: 220,
+              marginTop: 64,
+              width: 240,
               height: 3,
               background: "rgba(8,145,178,0.08)",
               borderRadius: 4,
               overflow: "hidden",
               position: "relative",
+              animation: "subtitleReveal 0.8s ease-out 0.8s both",
             }}
           >
             <div
@@ -538,8 +419,8 @@ export default function SplashScreen({ onComplete, minDuration = 3500 }: SplashS
             />
           </div>
 
-          {/* Loading dots */}
-          <div style={{ display: "flex", gap: 6, marginTop: 16, alignItems: "center" }}>
+          {/* Loading status section */}
+          <div style={{ display: "flex", gap: 6, marginTop: 16, alignItems: "center", animation: "subtitleReveal 0.8s ease-out 1s both" }}>
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -553,15 +434,13 @@ export default function SplashScreen({ onComplete, minDuration = 3500 }: SplashS
               />
             ))}
           </div>
-
-          {/* Loading text */}
           <p
             style={{
               fontSize: 11,
               color: "#94A3B8",
-              marginTop: 12,
+              marginTop: 10,
               fontWeight: 400,
-              letterSpacing: 1,
+              letterSpacing: 0.5,
               animation: "subtitleReveal 0.8s ease-out 1.2s both",
             }}
           >
