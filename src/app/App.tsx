@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import SplashScreen from "./components/SplashScreen";
+import zodiacLogo from "../imports/Zodiac_Colored_Logo_croped-removebg-preview.png";
 import {
   LayoutDashboard, Users, UserCheck, Briefcase, DollarSign, BarChart3,
   Headphones, Settings, Bell, Search, ChevronDown, ChevronRight, ChevronLeft,
@@ -17,6 +19,21 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ComposedChart,
   RadialBarChart, RadialBar, ScatterChart, Scatter
 } from "recharts";
+
+// ─── Responsive hooks ─────────────────────────────────────────────────────────
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => typeof window !== "undefined" ? window.matchMedia(query).matches : false);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener("change", handler);
+    setMatches(mql.matches);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+}
+const useIsMobile = () => useMediaQuery("(max-width: 767px)");
+const useIsTablet = () => useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const P = {
@@ -271,10 +288,52 @@ const PAGE_CRUMBS: Record<string, string[]> = {
 
 // ─── Notification panel ───────────────────────────────────────────────────────
 function NotifPanel({ onClose }: { onClose: () => void }) {
+  const isMobile = useIsMobile();
   const [notes, setNotes] = useState(NOTIFICATIONS);
   const unread = notes.filter(n => !n.read).length;
   const markAll = () => setNotes(prev => prev.map(n => ({ ...n, read: true })));
   const markOne = (id: number) => setNotes(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} onClick={onClose}>
+        <div className="mt-auto bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slideUp" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${P.border}` }}>
+            <div>
+              <h3 className="text-[16px] font-bold text-[#0C1B33]">Notifications</h3>
+              {unread > 0 && <p className="text-[11px] text-[#94A3B8]">{unread} unread</p>}
+            </div>
+            <div className="flex items-center gap-2">
+              {unread > 0 && <button onClick={markAll} className="text-[11px] font-semibold hover:underline" style={{ color: P.teal }}>Mark all read</button>}
+              <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-all" style={{ color: P.slate }}><X size={14} /></button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {notes.map(n => {
+              const Icon = n.icon;
+              return (
+                <div key={n.id} className={`flex gap-3 px-5 py-3.5 cursor-pointer transition-all hover:bg-slate-50 ${!n.read ? "bg-sky-50/40" : ""}`}
+                  style={{ borderBottom: `1px solid ${P.border}` }} onClick={() => markOne(n.id)}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${n.color}18` }}><Icon size={15} style={{ color: n.color }} /></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`text-[12.5px] font-semibold text-[#0C1B33] leading-snug ${!n.read ? "" : "font-medium"}`}>{n.title}</span>
+                      {!n.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: P.teal }} />}
+                    </div>
+                    <p className="text-[11px] leading-snug mt-0.5" style={{ color: P.slateLight }}>{n.body}</p>
+                    <span className="text-[10px] mt-1 block" style={{ color: P.slateLight }}>{n.time}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="px-5 py-3 text-center" style={{ borderTop: `1px solid ${P.border}` }}>
+            <button className="text-[12px] font-semibold hover:underline" style={{ color: P.teal }}>View all notifications</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute top-12 right-0 w-[380px] rounded-2xl shadow-2xl overflow-hidden z-50 bg-white"
@@ -363,6 +422,41 @@ function NavItem({ label, isActive, badge, onClick }: {
 function Sidebar({ active, setActive, collapsed, setCollapsed }: {
   active: string; setActive: (id: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void;
 }) {
+  const isMobile = useIsMobile();
+  const sidebarOpen = !collapsed;
+
+  const handleNavClick = (id: string) => {
+    setActive(id);
+    if (isMobile) setCollapsed(true);
+  };
+
+  // Mobile: slide-in drawer + backdrop overlay
+  if (isMobile) {
+    return (
+      <>
+        {/* Backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 transition-opacity duration-300"
+            style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(2px)" }}
+            onClick={() => setCollapsed(true)}
+          />
+        )}
+        <aside
+          className="fixed left-0 top-0 h-screen z-50 flex flex-col select-none overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            width: 280,
+            transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+            background: "#ffffff",
+            boxShadow: sidebarOpen ? "8px 0 32px rgba(0,0,0,0.12)" : "none",
+          }}>
+          {renderSidebarContent(active, handleNavClick)}
+        </aside>
+      </>
+    );
+  }
+
+  // Desktop/Tablet: collapsible sidebar
   return (
     <aside
       className="fixed left-0 top-0 h-screen z-40 flex flex-col select-none overflow-hidden transition-all duration-300 ease-in-out"
@@ -375,27 +469,16 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: {
 
       {/* ── Logo ── */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4 flex-shrink-0">
-        {/* Circular zodiac emblem */}
-        <div className="flex-shrink-0 w-[52px] h-[52px] rounded-full flex items-center justify-center overflow-hidden"
-          style={{ border: "2px solid #0D9DA8" }}>
-          <svg viewBox="0 0 52 52" width="52" height="52" fill="none">
-            <circle cx="26" cy="26" r="26" fill="#f0fafa" />
-            <circle cx="26" cy="26" r="20" stroke="#0D9DA8" strokeWidth="1.2" fill="none" />
-            <circle cx="26" cy="26" r="13" stroke="#0D9DA8" strokeWidth="0.8" fill="none" />
-            {/* simplified face/zodiac lines */}
-            <ellipse cx="26" cy="22" rx="5" ry="6" stroke="#1a2332" strokeWidth="1.2" fill="none" />
-            <path d="M22 28 Q26 34 30 28" stroke="#1a2332" strokeWidth="1.2" fill="none" />
-            <circle cx="23.5" cy="20.5" r="1" fill="#1a2332" />
-            <circle cx="28.5" cy="20.5" r="1" fill="#1a2332" />
-            {/* star accents */}
-            <path d="M10 26 l1.5-1.5 1.5 1.5-1.5 1.5z" fill="#0D9DA8" opacity="0.6" />
-            <path d="M39 20 l1-1 1 1-1 1z" fill="#0D9DA8" opacity="0.6" />
-            <path d="M38 34 l1.2-1.2 1.2 1.2-1.2 1.2z" fill="#0D9DA8" opacity="0.5" />
-          </svg>
-        </div>
+        {/* Circular zodiac emblem – actual brand logo */}
+        <img
+          src={zodiacLogo}
+          alt="ZodiacPluss Logo"
+          className="flex-shrink-0 w-[56px] h-[56px] object-contain"
+          draggable={false}
+        />
         {/* Brand name */}
         <div>
-          <div className="flex items-center gap-1 leading-none">
+          <div className="flex items-center gap-0.5 leading-none">
             <span className="text-[20px] font-bold tracking-tight" style={{ color: "#1a2332" }}>Zodiac</span>
             <span className="text-[20px] font-bold tracking-tight" style={{ color: SIDEBAR_TEAL }}>Pluss</span>
             {/* leaf/sparkle accent */}
@@ -409,6 +492,8 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: {
           <p className="text-[10px] mt-0.5 tracking-wide" style={{ color: "#94A3B8" }}>Your Personal Wellness Companion</p>
         </div>
       </div>
+
+
 
       {/* ── Greeting card ── */}
       <div className="mx-4 mb-4 flex-shrink-0">
@@ -467,7 +552,7 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: {
 
         {/* Settings + Logout */}
         <div className="pb-6 px-2">
-          <NavItem label="Settings" isActive={active === "settings"} onClick={() => setActive("settings")} />
+          <NavItem label="Settings" isActive={active === "settings"} onClick={() => handleNavClick("settings")} />
           <button
             className="w-full flex items-center px-6 py-[10px] text-[14.5px] font-medium transition-all hover:text-rose-500"
             style={{ color: "#1a2332" }}>
@@ -479,11 +564,76 @@ function Sidebar({ active, setActive, collapsed, setCollapsed }: {
   );
 }
 
+// Shared sidebar content renderer (used by both mobile drawer and desktop sidebar)
+function renderSidebarContent(active: string, setActive: (id: string) => void) {
+  return (
+    <>
+      {/* ── Logo ── */}
+      <div className="flex items-center gap-3 px-5 pt-6 pb-4 flex-shrink-0">
+        <img src={zodiacLogo} alt="ZodiacPluss Logo" className="flex-shrink-0 w-[56px] h-[56px] object-contain" draggable={false} />
+        <div>
+          <div className="flex items-center gap-0.5 leading-none">
+            <span className="text-[20px] font-bold tracking-tight" style={{ color: "#1a2332" }}>Zodiac</span>
+            <span className="text-[20px] font-bold tracking-tight" style={{ color: SIDEBAR_TEAL }}>Pluss</span>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="ml-0.5 -mt-1">
+              <path d="M10 2C10 2 14 6 14 11C14 14.3137 12.2091 17 10 17C7.79086 17 6 14.3137 6 11C6 6 10 2 10 2Z" fill="#0D9DA8" opacity="0.85" />
+              <path d="M10 17V10" stroke="#fff" strokeWidth="1" />
+              <circle cx="16" cy="4" r="1.5" fill="#F59E0B" />
+              <circle cx="5" cy="6" r="1" fill="#0D9DA8" opacity="0.5" />
+            </svg>
+          </div>
+          <p className="text-[10px] mt-0.5 tracking-wide" style={{ color: "#94A3B8" }}>Your Personal Wellness Companion</p>
+        </div>
+      </div>
+
+      {/* ── Greeting card ── */}
+      <div className="mx-4 mb-4 flex-shrink-0">
+        <div className="rounded-2xl px-4 py-3" style={{ background: "linear-gradient(135deg, #e8ecf0 0%, #dce3ea 100%)", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+          <div className="text-[14px] font-bold" style={{ color: "#1a2332" }}>Hello Rashmi !</div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3C10 3 6 7 6 11.5C6 14 7.8 16 10 16C12.2 16 14 14 14 11.5C14 7 10 3 10 3Z" fill="#0D9DA8" />
+              <path d="M10 16V10" stroke="white" strokeWidth="1.2" />
+              <circle cx="10" cy="10" r="1" fill="white" />
+            </svg>
+            <span className="text-[12px] font-bold italic tracking-wide" style={{ color: SIDEBAR_TEAL }}>GOOD MORNING</span>
+          </div>
+        </div>
+      </div>
+      <div className="mx-4 mb-1 flex-shrink-0" style={{ height: 1, background: "rgba(0,0,0,0.07)" }} />
+      <div className="flex-1 overflow-y-auto">
+        <div className="pt-2 pb-1 px-2">
+          {NAV_MAIN.map(item => (
+            <NavItem key={item.id} label={item.label} isActive={active === item.id}
+              badge={"badge" in item ? item.badge : undefined} onClick={() => setActive(item.id)} />
+          ))}
+        </div>
+        <div className="mx-4 my-2" style={{ height: 1, background: "rgba(0,0,0,0.07)" }} />
+        <div className="px-6 pt-1 pb-1">
+          <p className="text-[10.5px] font-bold tracking-[0.12em] mb-2" style={{ color: "#94A3B8" }}>PAGES</p>
+        </div>
+        <div className="pb-2 px-2">
+          {NAV_PAGES.map(item => (
+            <NavItem key={item.id} label={item.label} isActive={active === item.id} onClick={() => setActive(item.id)} />
+          ))}
+        </div>
+        <div className="mx-4 my-2" style={{ height: 1, background: "rgba(0,0,0,0.07)" }} />
+        <div className="pb-6 px-2">
+          <NavItem label="Settings" isActive={active === "settings"} onClick={() => setActive("settings")} />
+          <button className="w-full flex items-center px-6 py-[10px] text-[14.5px] font-medium transition-all hover:text-rose-500"
+            style={{ color: "#1a2332" }}>Logout</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Top Nav ──────────────────────────────────────────────────────────────────
 function TopNav({ ml, page, dark, setDark, onToggleSidebar }: { ml: number; page: string; dark: boolean; setDark: (v: boolean) => void; onToggleSidebar: () => void }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const crumbs = PAGE_CRUMBS[page] ?? ["Dashboard"];
   const unread = NOTIFICATIONS.filter(n => !n.read).length;
 
@@ -496,8 +646,8 @@ function TopNav({ ml, page, dark, setDark, onToggleSidebar }: { ml: number; page
   }, []);
 
   return (
-    <header className="fixed top-0 right-0 z-30 h-16 flex items-center px-6 gap-4 transition-all duration-300"
-      style={{ left: ml, background: "rgba(241,245,249,0.95)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${P.border}` }}>
+    <header className="fixed top-0 right-0 z-30 h-16 flex items-center px-4 sm:px-6 gap-4 transition-all duration-300"
+      style={{ left: isMobile ? 0 : ml, background: "rgba(241,245,249,0.95)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${P.border}` }}>
 
       {/* Hamburger toggle */}
       <button onClick={onToggleSidebar}
@@ -507,7 +657,7 @@ function TopNav({ ml, page, dark, setDark, onToggleSidebar }: { ml: number; page
       </button>
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-[12.5px] flex-shrink-0">
+      <div className="hidden sm:flex items-center gap-1.5 text-[12.5px] flex-shrink-0">
         <span style={{ color: P.slateLight }}>ZodiacPluss</span>
         {crumbs.map((c, i) => (
           <span key={c} className="flex items-center gap-1.5">
@@ -601,6 +751,7 @@ function TopNav({ ml, page, dark, setDark, onToggleSidebar }: { ml: number; page
 
 // ─── Quick Actions FAB ────────────────────────────────────────────────────────
 function QuickActions() {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const actions = [
     { label: "New User", icon: UserPlus, color: P.teal },
@@ -609,7 +760,7 @@ function QuickActions() {
     { label: "Add Expert", icon: UserCheck, color: P.amber },
   ];
   return (
-    <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
+    <div className={`fixed ${isMobile ? "bottom-4 right-4" : "bottom-8 right-8"} z-50 flex flex-col items-end gap-2`}>
       {open && actions.map((a, i) => {
         const Icon = a.icon;
         return (
@@ -625,7 +776,7 @@ function QuickActions() {
         );
       })}
       <button onClick={() => setOpen(v => !v)}
-        className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
+        className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
         style={{ background: `linear-gradient(135deg,${P.teal},${P.tealDark})` }}>
         <div className={`transition-transform duration-200 ${open ? "rotate-45" : ""}`}>
           <Plus size={22} />
@@ -638,18 +789,21 @@ function QuickActions() {
 // ─────────────────────────────────────────────────────────────────────────────
 //  PAGE SHELL
 // ─────────────────────────────────────────────────────────────────────────────
-const Page = ({ title, sub, action, children }: { title: string; sub?: string; action?: React.ReactNode; children: React.ReactNode }) => (
-  <div>
-    <div className="flex items-start justify-between mb-7">
-      <div>
-        <h1 className="text-[22px] font-bold text-[#0C1B33] tracking-tight">{title}</h1>
-        {sub && <p className="text-[12.5px] mt-1" style={{ color: P.slateLight }}>{sub}</p>}
+const Page = ({ title, sub, action, children }: { title: string; sub?: string; action?: React.ReactNode; children: React.ReactNode }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div>
+      <div className={`flex ${isMobile ? "flex-col gap-3 items-stretch" : "items-start justify-between"} mb-7`}>
+        <div>
+          <h1 className="text-[22px] font-bold text-[#0C1B33] tracking-tight">{title}</h1>
+          {sub && <p className="text-[12.5px] mt-1" style={{ color: P.slateLight }}>{sub}</p>}
+        </div>
+        {action && <div className={isMobile ? "w-full flex" : ""}>{action}</div>}
       </div>
-      {action}
+      {children}
     </div>
-    {children}
-  </div>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DASHBOARD
@@ -663,13 +817,13 @@ function DashboardPage() {
           <Download size={14} />Export Report
         </button>
       }>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={Users} label="Total Clients" value="24,891" sub="+312 this week" trend={5.8} color={P.teal} gradient />
         <Kpi icon={UserCheck} label="Active Experts" value="1,247" sub="94.2% verified" trend={3.2} color={P.emerald} gradient />
         <Kpi icon={Activity} label="Sessions Today" value="3,892" sub="avg 42 min/session" trend={8.4} color={P.violet} gradient />
         <Kpi icon={DollarSign} label="Revenue MTD" value="₹1.84Cr" sub="92% of ₹2Cr target" trend={12.1} color={P.amber} gradient />
       </div>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Kpi icon={Briefcase} label="EAP Companies" value="48" sub="4,520 members" trend={6.3} color={P.teal} />
         <Kpi icon={Star} label="Expert Rating" value="4.72★" sub="184K reviews" trend={1.2} color={P.amber} />
         <Kpi icon={MessageSquare} label="Open Tickets" value="23" sub="Avg response 1.4h" trend={-18.2} color={P.rose} />
@@ -677,7 +831,7 @@ function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Platform Growth" sub="Monthly active users — all segments"
             right={<select className="text-[11px] rounded-lg px-2.5 py-1.5 focus:outline-none" style={{ border: `1px solid ${P.border}`, color: P.slate, background: "#F8FAFC" }}>
               <option>Last 12 months</option><option>Last 6 months</option>
@@ -795,6 +949,7 @@ function DashboardPage() {
 //  CLIENT USERS
 // ─────────────────────────────────────────────────────────────────────────────
 function ClientsPage() {
+  const isMobile = useIsMobile();
   const [q, setQ] = useState("");
   const rows = clients.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
   const plans = [
@@ -805,14 +960,14 @@ function ClientsPage() {
   ];
   return (
     <Page title="Client Users" sub="Manage all registered client accounts">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={Users} label="Total Clients" value="24,891" sub="All time" trend={5.8} color={P.teal} gradient />
         <Kpi icon={Activity} label="Active (30d)" value="18,420" sub="74% of total" trend={3.1} color={P.emerald} gradient />
         <Kpi icon={UserPlus} label="New Today" value="312" sub="+18% vs yesterday" trend={18} color={P.violet} gradient />
         <Kpi icon={TrendingDown} label="Churned (30d)" value="284" sub="1.1% churn rate" trend={-4.2} color={P.amber} gradient />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Client Growth" sub="Monthly total clients" />
           <ResponsiveContainer width="100%" height={210}>
             <AreaChart data={monthlyGrowth} margin={{ top: 2, right: 2, left: -22, bottom: 0 }}>
@@ -845,17 +1000,17 @@ function ClientsPage() {
         </Card>
       </div>
       <Card className="p-6">
-        <div className="flex flex-wrap items-start gap-3 mb-5">
+        <div className={`flex ${isMobile ? "flex-col items-stretch gap-3" : "flex-wrap items-start justify-between"} mb-5`}>
           <div><h2 className="text-[14.5px] font-bold text-[#0C1B33]">Client Directory</h2><p className="text-[11.5px]" style={{ color: P.slateLight }}>{rows.length} users shown</p></div>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <div className="relative">
+          <div className={`flex flex-wrap gap-2 ${isMobile ? "w-full" : "ml-auto"}`}>
+            <div className={`relative ${isMobile ? "flex-1" : ""}`}>
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.slateLight }} />
               <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…"
-                className="pl-8 pr-3 py-2 text-[12px] rounded-xl focus:outline-none w-44"
+                className={`pl-8 pr-3 py-2 text-[12px] rounded-xl focus:outline-none ${isMobile ? "w-full" : "w-44"}`}
                 style={{ border: `1px solid ${P.border}`, background: "#F8FAFC" }} />
             </div>
             {[["Filter", Filter], ["Export", Download]].map(([l, Icon]) => (
-              <button key={l as string} className="flex items-center gap-1.5 text-[12px] px-3 py-2 rounded-xl hover:bg-slate-50 transition-all"
+              <button key={l as string} className="flex items-center justify-center gap-1.5 text-[12px] px-3 py-2 rounded-xl hover:bg-slate-50 transition-all flex-1 sm:flex-initial"
                 style={{ border: `1px solid ${P.border}`, color: P.slate }}>
                 <Icon size={13} />{l}
               </button>
@@ -893,14 +1048,14 @@ function ClientsPage() {
 function ExpertsPage() {
   return (
     <Page title="Expert Users" sub="Manage verified experts and monitor performance">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={UserCheck} label="Total Experts" value="1,247" sub="All specialties" trend={3.2} color={P.emerald} gradient />
         <Kpi icon={CheckCircle} label="Verified" value="1,174" sub="94.1% verification rate" trend={1.8} color={P.teal} gradient />
         <Kpi icon={Clock} label="Pending Review" value="73" sub="Avg 2.4 days" trend={-12} color={P.amber} gradient />
         <Kpi icon={Star} label="Avg Rating" value="4.72" sub="184K reviews" trend={0.8} color={P.violet} gradient />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Sessions by Specialty" sub="Weekly volume" />
           <ResponsiveContainer width="100%" height={230}>
             <BarChart data={expertCats} margin={{ top: 2, right: 2, left: -22, bottom: 0 }}>
@@ -998,6 +1153,7 @@ const CALENDAR_EVENTS = [
 //  EAP / CALENDAR PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 function EAPPage() {
+  const isMobile = useIsMobile();
   const [calView, setCalView] = useState<"Day" | "Week" | "Month">("Month");
   const [calMonth] = useState({ name: "October", year: 2026 });
   const [hoveredEvent, setHoveredEvent] = useState<number | null>(null);
@@ -1044,9 +1200,9 @@ function EAPPage() {
         <h1 className="text-[22px] font-bold text-[#0C1B33] tracking-tight">Calender</h1>
       </div>
 
-      <div className="flex gap-5" style={{ minHeight: 680 }}>
+      <div className="flex flex-col lg:flex-row gap-5" style={{ minHeight: 680 }}>
         {/* ── Left Panel: Events List ── */}
-        <div className="flex-shrink-0 w-[300px]">
+        <div className="w-full lg:w-[300px] lg:flex-shrink-0">
           <Card className="p-0 overflow-hidden h-full flex flex-col">
             {/* Add button */}
             <div className="p-5">
@@ -1111,7 +1267,7 @@ function EAPPage() {
         <div className="flex-1 min-w-0">
           <Card className="p-5 h-full flex flex-col">
             {/* Calendar header */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <button className="text-[12px] font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all" style={{ color: P.slate }}>
                   Today
@@ -1166,7 +1322,7 @@ function EAPPage() {
                       borderRight: (idx + 1) % 7 !== 0 ? `1px solid ${P.border}` : "none",
                       borderBottom: idx < 35 ? `1px solid ${P.border}` : "none",
                       background: !cell.isCurrentMonth ? "repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,0.015) 4px,rgba(0,0,0,0.015) 8px)" : "white",
-                      minHeight: 90,
+                      minHeight: isMobile ? 60 : 90,
                     }}>
                     {/* Day number */}
                     <div className="px-2 pt-1.5 pb-0.5">
@@ -1289,14 +1445,14 @@ function EAPPage() {
 function FinancePage() {
   return (
     <Page title="Finance" sub="Revenue, payouts, and transaction management">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={TrendingUp} label="Revenue (Jul)" value="₹1.84Cr" sub="92% of ₹2Cr target" trend={12.1} color={P.emerald} gradient />
         <Kpi icon={Wallet} label="Subscriptions" value="₹1.08Cr" sub="59% of total" trend={8.4} color={P.teal} gradient />
         <Kpi icon={CreditCard} label="Session Revenue" value="₹55.8L" sub="30% of total" trend={14.2} color={P.violet} gradient />
         <Kpi icon={ArrowUpRight} label="Expert Payouts" value="₹38.4L" sub="Processed this month" trend={9.8} color={P.amber} gradient />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Revenue by Source" sub="Jan–Jul 2026 · stacked by stream" />
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={revenueMonthly} margin={{ top: 2, right: 2, left: -10, bottom: 0 }}>
@@ -1365,7 +1521,7 @@ function FinancePage() {
 function AnalyticsPage() {
   return (
     <Page title="Analytics" sub="Deep platform insights, retention, and engagement data">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={Target} label="D7 Retention" value="82%" sub="+2% vs last month" trend={2.5} color={P.teal} gradient />
         <Kpi icon={Eye} label="D30 Retention" value="65%" sub="+2% vs last month" trend={3.2} color={P.emerald} gradient />
         <Kpi icon={Zap} label="Avg Session" value="41.3 min" sub="+3.4 min" trend={8.9} color={P.violet} gradient />
@@ -1406,7 +1562,7 @@ function AnalyticsPage() {
         </Card>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Category Performance" sub="Sessions vs expert count" />
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={expertCats} margin={{ top: 2, right: 2, left: -22, bottom: 0 }}>
@@ -1455,7 +1611,7 @@ function OperationsPage() {
 
   return (
     <Page title="Business Operations" sub="App releases, feature flags, and content management">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Kpi icon={MonitorSmartphone} label="App Versions Live" value="4" sub="2 iOS · 2 Android" trend={0} color={P.teal} gradient />
         <Kpi icon={Layers} label="Feature Flags" value="6" sub="4 active · 2 disabled" trend={0} color={P.emerald} gradient />
         <Kpi icon={FileText} label="Content Items" value="284" sub="18 scheduled" trend={8.2} color={P.violet} gradient />
@@ -1575,7 +1731,7 @@ function AdminTeamPage() {
   return (
     <Page title="Admin Team" sub="Manage admin accounts, roles, and access permissions"
       action={<button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-[12.5px] font-semibold" style={{ background: `linear-gradient(135deg,${P.teal},${P.tealDark})` }}><UserPlus size={14} />Invite Admin</button>}>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Kpi icon={Crown} label="Total Admins" value="6" sub="1 Super Admin" trend={0} color={P.teal} gradient />
         <Kpi icon={CheckCircle} label="Active Now" value="4" sub="Online in last 30 min" trend={0} color={P.emerald} gradient />
         <Kpi icon={Shield} label="Departments" value="5" sub="Exec, Finance, Support…" trend={0} color={P.violet} gradient />
@@ -1685,14 +1841,14 @@ function AdminTeamPage() {
 function SupportPage() {
   return (
     <Page title="Support Center" sub="Manage tickets, agent assignments, and SLA compliance">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <Kpi icon={MessageSquare} label="Open Tickets" value="23" sub="High priority: 4" trend={-18.2} color={P.rose} gradient />
         <Kpi icon={Clock} label="Avg Response" value="1.4h" sub="SLA target: 2h" trend={12.4} color={P.emerald} gradient />
         <Kpi icon={CheckCircle} label="Resolved (7d)" value="184" sub="96.2% resolution rate" trend={8.1} color={P.teal} gradient />
         <Kpi icon={Star} label="CSAT" value="4.4 / 5" sub="Based on 142 reviews" trend={3.2} color={P.amber} gradient />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Card className="col-span-2 p-6">
+        <Card className="col-span-1 xl:col-span-2 p-6">
           <SH title="Ticket Volume" sub="This week — opened vs. resolved" />
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weekSessions.map(d => ({ d: d.d, opened: Math.round(d.total / 155), resolved: Math.round(d.done / 155) }))}
@@ -1723,7 +1879,7 @@ function SupportPage() {
               <Tooltip contentStyle={tipStyle} />
             </RPie>
           </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2">
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2">
             {[["Billing", "38%", P.rose], ["App Bug", "28%", P.amber], ["EAP", "18%", P.violet], ["Expert", "12%", P.emerald], ["Other", "4%", P.slateLight]].map(([n, p, c]) => (
               <div key={n as string} className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c as string }} />
@@ -1791,7 +1947,7 @@ function SettingsPage() {
               <div className="flex-1"><div className="text-[15px] font-bold text-[#0C1B33]">Rashmi Guia</div><div className="text-[11.5px]" style={{ color: P.slateLight }}>rashmi.guia@zodiacpluss.com</div><div className="text-[11px] font-semibold mt-0.5" style={{ color: P.teal }}>Super Admin · Director & CEO</div></div>
               <button className="text-[12px] px-4 py-2 rounded-xl" style={{ border: `1px solid ${P.border}`, color: P.slate }}>Edit Profile</button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[["Full Name", "Rashmi Guia"], ["Role", "Super Admin"], ["Email", "rashmi.guia@zodiacpluss.com"], ["Phone", "+91 98765 43210"], ["Timezone", "Asia/Kolkata (IST)"], ["Language", "English (India)"]].map(([l, v]) => (
                 <div key={l}><label className="text-[9.5px] font-bold uppercase tracking-wide block mb-1" style={{ color: P.slateLight }}>{l}</label>
                   <input defaultValue={v} className="w-full px-3 py-2 text-[12px] rounded-xl focus:outline-none transition-all" style={{ border: `1px solid ${P.border}`, background: "#F8FAFC", color: P.navy }} /></div>
@@ -1904,14 +2060,32 @@ const PAGES: Record<string, React.ReactNode> = {
 
 export default function App() {
   const [active, setActive] = useState("dashboard");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [dark, setDark] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const isMobile = useIsMobile();
+
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
   }, [dark]);
 
-  const ml = collapsed ? 0 : SIDEBAR_W;
+  useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    } else {
+      setCollapsed(false);
+    }
+  }, [isMobile]);
+
+  const ml = isMobile ? 0 : (collapsed ? 0 : SIDEBAR_W);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} minDuration={3500} />;
+  }
 
   return (
     <>
@@ -1919,6 +2093,16 @@ export default function App() {
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .animate-pageEnter {
+          animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1929,8 +2113,10 @@ export default function App() {
         <Sidebar active={active} setActive={setActive} collapsed={collapsed} setCollapsed={setCollapsed} />
         <TopNav ml={ml} page={active} dark={dark} setDark={setDark} onToggleSidebar={() => setCollapsed(v => !v)} />
         <main className="pt-16 transition-all duration-300 ease-in-out" style={{ marginLeft: ml }}>
-          <div className="p-7 max-w-[1600px] mx-auto">
-            {PAGES[active] ?? PAGES.dashboard}
+          <div className={`${isMobile ? "p-4" : "p-7"} max-w-[1600px] mx-auto`}>
+            <div key={active} className="animate-pageEnter">
+              {PAGES[active] ?? PAGES.dashboard}
+            </div>
           </div>
         </main>
         <QuickActions />
